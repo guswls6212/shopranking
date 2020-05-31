@@ -90,6 +90,7 @@ class MyTextInputFormState extends State<MyTextInputForm>{
     String urlPath = "https://search.shopping.naver.com/search/all.nhn?";
 
     String shopID = "";
+    String exposeRank = "";
     int pagingIndex;
     List<dom.Element> linksA;
     List<dom.Element> linksLi;
@@ -107,25 +108,24 @@ class MyTextInputFormState extends State<MyTextInputForm>{
     dom.Document document = parser.parse(response.body);
 
     /*
-     *  ~ 20200531 웹 크롤링 셀렉터
+     *  20200531 ~ 웹 크롤링 셀렉터
      */
-    //쇼핑몰명 취득 위한 쿼리 셀렉터
-    linksA = document.querySelectorAll('p.mall_txt > a.mall_more');
-    //쇼핑몰 순위 취득 위한 쿼리 셀렉터
-    linksLi = document.querySelectorAll('li._itemSection');
-
-     /*
-      *  20200531 ~ 웹 크롤링 셀렉터
-      */
-//     linksA = document.querySelectorAll('basicList_mall_grade__31CEX');
+    //쇼핑몰명, 랭킹취득 위한 쿼리 셀렉터
+    linksA = document.querySelectorAll('div.basicList_mall_title__3MWFY > a.basicList_mall__sbVax');
 
     //쇼핑몰명 존재여부 확인
+
     for (var mallName in linksA) {
-      // ~ 20200531 웹 크롤링 셀렉터
-      if (mallName.attributes['title'] == _mallNameTC.text.trim()) {
-        print('success');
-        shopID = mallName.attributes['data-filter-value'];
-        print(shopID);
+      if (mallName.text == _mallNameTC.text.trim()) {
+        shopID = mallName.text;
+        // N=a:lst*N.mall,i:xxxxxxxxxx(id),r:xx(rank)
+        String data = mallName.attributes['data-nclick'];
+        if(data != null && data.isNotEmpty){
+          var list = data.split(',');
+          var rankStr = list[2].split(':');
+          exposeRank = rankStr[1];
+          print('mallName: ${mallName.text}, rank: $exposeRank');
+        }
         break;
       }
       // 20200531 ~ 웹 크롤링 셀렉터
@@ -145,14 +145,6 @@ class MyTextInputFormState extends State<MyTextInputForm>{
       } else{
         //페이지 표시 위치
         int showRank = 1;
-        String exposeRank = "";
-        for(var dataRank in linksLi){
-          if(dataRank.attributes['data-mall-seq'] == shopID){
-            exposeRank = dataRank.attributes['data-expose-rank'];
-            break;
-          }
-          showRank++;
-        }
         if(exposeRank == ""){
           setState(() {
             result1 = "노출랭킹 에러";
@@ -162,7 +154,6 @@ class MyTextInputFormState extends State<MyTextInputForm>{
         setState(() {
           result0 = "검색명    : $keyword";
           result1 = "노출랭킹: $exposeRank위";
-          result2 = "상품위치: $pagingIndex페이지 $showRank번째";
         });
       }
 
